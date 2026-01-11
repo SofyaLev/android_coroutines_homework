@@ -30,42 +30,39 @@ class MainViewModel @Inject constructor(
     private val _operations: MutableStateFlow<List<OperationItem>> = MutableStateFlow(emptyList())
     val operations: StateFlow<List<OperationItem>> = _operations.asStateFlow()
 
-    var total: TotalItem? = null
-
-    lateinit var onTotalChanged :(TotalItem?) -> Unit
+    private val _total: MutableStateFlow<TotalItem?> = MutableStateFlow(null)
+    val total: StateFlow<TotalItem?> = _total.asStateFlow()
 
     init {
         viewModelScope.launch {
             _operations.value =
                 subscribeOperationsUseCase
-                    .invoke()
-                    .operations
-                    .map { uiMapper.invoke(it) }
-
-            total = subscribeTotalUseCase
                 .invoke()
-                .map { total ->
-                    val incomes = _operations
-                        .value
-                        .filter { it.operationType == OperationType.INCOME }
-                        .map { it.operationSum }.sum()
+                .operations
+                .map { uiMapper.invoke(it) }
 
-                    val outcomes = _operations
-                        .value
-                        .filter { it.operationType == OperationType.OUTCOME }
-                        .map { it.operationSum }.sum()
+            _total.value = subscribeTotalUseCase
+                    .invoke()
+                    .map { total ->
+                        val income = _operations
+                            .value
+                            .filter { it.operationType == OperationType.INCOME }
+                            .map { it.operationSum }.sum()
 
-                    val progress = (outcomes.toFloat() / incomes.toFloat()) * 100f
+                        val outcome = _operations
+                            .value
+                            .filter { it.operationType == OperationType.OUTCOME }
+                            .map { it.operationSum }.sum()
 
-                    TotalItem(
-                        total = total.amount,
-                        income = incomes,
-                        outcome = outcomes,
-                        progress = progress
-                    )
-                }.first().also {
-                    onTotalChanged(it)
-                }
+                        val progress = (outcome.toFloat() / income.toFloat()) * 100f
+
+                        TotalItem(
+                            total = total.amount,
+                            income = income,
+                            outcome = outcome,
+                            progress = progress
+                        )
+                    }.first()
+            }
         }
     }
-}
