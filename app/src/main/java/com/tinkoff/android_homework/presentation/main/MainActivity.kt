@@ -46,13 +46,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun subscribeToTotal() {
-        viewModel.onTotalChanged = { totalItem ->
-            income.text = totalItem?.income.toString()
-            outcome.text = totalItem?.outcome.toString()
-            totalSum.text = totalItem?.total.toString()
+        lifecycleScope.launch {
+            viewModel.total.collect { totalItem ->
+                income.text = totalItem?.income.toString()
+                outcome.text = totalItem?.outcome.toString()
+                totalSum.text = totalItem?.total.toString()
 
-            Log.e("TAGRTRT", "totalItem?.progress :${totalItem?.progress}")
-            progressBar.progress = totalItem?.progress?.toInt() ?: 0
+                Log.e("TAGRTRT", "totalItem?.progress :${totalItem?.progress}")
+                progressBar.progress = totalItem?.progress?.toInt() ?: 0
+            }
         }
     }
 
